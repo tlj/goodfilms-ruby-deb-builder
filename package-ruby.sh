@@ -3,6 +3,12 @@
 set -e
 set -x
 
+ARCH=`uname -m`
+case "$ARCH" in
+    i?86) ARCH="i386" ;;
+    x86_64) ARCH="amd64" ;;
+esac
+
 # Intall a bunch of stuff I want ruby built against
 sudo apt-get -y update
 sudo apt-get -y install libssl-dev libreadline-dev libyaml-dev build-essential openssl libreadline6 libreadline6-dev curl git-core zlib1g zlib1g-dev libssl-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt-dev autoconf libc6-dev ncurses-dev automake libtool bison libffi-dev
@@ -17,11 +23,11 @@ if [[ ! $(which fpm) ]]; then
   sudo gem install fpm
 fi
 
-RUBY_VERSION="1.9.3-p125"
+RUBY_VERSION="2.0.0-p195"
 SOURCE_FILE_NAME=ruby-${RUBY_VERSION}
 INSTALL_DIR=/tmp/installdir
 WORKING_DIRECTORY=/tmp/working
-PACKAGE_NAME=goodfilms-${SOURCE_FILE_NAME}_amd64.deb
+PACKAGE_NAME=${SOURCE_FILE_NAME}_${ARCH}.deb
 
 # clean any previous build artifacts
 rm -rf ${INSTALL_DIR}
@@ -33,7 +39,7 @@ cd ${WORKING_DIRECTORY}
 
 # Download & compile ruby
 if [[ ! -f ${SOURCE_FILE_NAME}.tar.gz ]]; then
-  wget ftp://ftp.ruby-lang.org/pub/ruby/1.9/${SOURCE_FILE_NAME}.tar.gz
+  wget ftp://ftp.ruby-lang.org/pub/ruby/2.0/${SOURCE_FILE_NAME}.tar.gz
 fi
 tar -zxvf ${SOURCE_FILE_NAME}.tar.gz
 cd ${SOURCE_FILE_NAME}
@@ -45,13 +51,13 @@ fpm -s dir -t deb -n ruby -v ${RUBY_VERSION} -C ${INSTALL_DIR} \
   -p ruby-VERSION_ARCH.deb -d "libstdc++6 (>= 4.4.3)" \
   -d "libc6 (>= 2.6)" -d "libffi6 (>= 3.0.10)" -d "libgdbm3 (>= 1.8.3)" \
   -d "libncurses5 (>= 5.7)" -d "libreadline6 (>= 6.1)" \
-  -d "libssl0.9.8 (>= 0.9.8)" -d "zlib1g (>= 1:1.2.2)" \
+  -d "libssl0.9.8 (>= 0.9.8)" -d "zlib1g (>= 1:1.2.2)" -d "libyaml-0-2 (>= 0.1.4)" \
   usr/bin usr/lib usr/share/man usr/include
 
 # I have NFI if this is required
 # apt-get install libssl0.9.8 libffi6
 
 # copy the deb package back to your vagrant folder
-if [[ -f /vagrant ]]; then
+if [[ -d /vagrant ]]; then
   cp ${PACKAGE_NAME} /vagrant
 fi
